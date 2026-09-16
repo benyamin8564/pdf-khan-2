@@ -27,6 +27,7 @@ import java.text.NumberFormat
 import java.util.Locale
 import java.util.concurrent.Executors
 import kotlin.math.max
+import kotlin.math.roundToInt
 
 private data class PdfItem(val uri: Uri, val name: String)
 private data class PriceResult(
@@ -41,6 +42,7 @@ private data class PriceResult(
 )
 
 class MainActivity : AppCompatActivity() {
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).roundToInt()
     private val executor = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
     private lateinit var search: EditText
@@ -81,47 +83,93 @@ class MainActivity : AppCompatActivity() {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(bg)
-            setPadding(20, 18, 20, 12)
+            setPadding(dp(16), dp(16), dp(16), dp(12))
             layoutDirection = View.LAYOUT_DIRECTION_RTL
         }
 
         val title = TextView(this).apply {
             text = "جستجوی هوشمند قیمت ابزار"
-            textSize = 24f; setTextColor(Color.WHITE); typeface = Typeface.DEFAULT_BOLD
+            textSize = 24f
+            setTextColor(Color.WHITE)
+            typeface = Typeface.DEFAULT_BOLD
             gravity = Gravity.RIGHT
         }
         root.addView(title, LinearLayout.LayoutParams(-1, -2))
 
         val sub = TextView(this).apply {
             text = "جستجوی هوشمند با تطبیق نام، شرح، کد، مدل و مشخصات"
-            textSize = 13f; setTextColor(Color.LTGRAY); gravity = Gravity.RIGHT
-            setPadding(0, 5, 0, 12)
+            textSize = 13f
+            setTextColor(Color.LTGRAY)
+            gravity = Gravity.RIGHT
+            setPadding(0, dp(5), 0, dp(12))
         }
         root.addView(sub)
 
         search = EditText(this).apply {
             hint = "مثلاً: دریل 13  •  GWS  •  کد کالا"
-            setHintTextColor(Color.GRAY); setTextColor(Color.WHITE); textSize = 16f
-            setSingleLine(true); setPadding(18, 0, 18, 0)
-            setBackgroundColor(card); layoutDirection = View.LAYOUT_DIRECTION_RTL
+            setHintTextColor(Color.GRAY)
+            setTextColor(Color.WHITE)
+            textSize = 16f
+            setSingleLine(true)
+            setPadding(dp(16), 0, dp(16), 0)
+            setBackgroundColor(card)
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
         }
-        root.addView(search, LinearLayout.LayoutParams(-1, 58))
+        root.addView(search, LinearLayout.LayoutParams(-1, dp(56)))
         search.setOnEditorActionListener { _, _, _ -> doSearch(); true }
 
-        val buttons = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL; setPadding(0, 10, 0, 10) }
-        val add = Button(this).apply { text = "＋ افزودن PDF"; setOnClickListener { picker.launch(arrayOf("application/pdf")) } }
-        val manage = Button(this).apply { text = "مدیریت فایل‌ها"; setOnClickListener { showFileManager() } }
-        buttons.addView(add, LinearLayout.LayoutParams(0, 52, 1f))
-        buttons.addView(manage, LinearLayout.LayoutParams(0, 52, 1f).apply { marginStart = 8 })
+        // Use dp (not raw pixels) and a fixed 48dp touch target so both buttons
+        // remain visible/readable across low- and high-density Android phones.
+        val buttons = LinearLayout(this).apply {
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, dp(8), 0, dp(8))
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+        }
+        val add = Button(this).apply {
+            text = "＋ افزودن PDF"
+            textSize = 14f
+            isAllCaps = false
+            maxLines = 1
+            ellipsize = android.text.TextUtils.TruncateAt.END
+            minHeight = 0
+            minimumHeight = 0
+            setPadding(dp(6), 0, dp(6), 0)
+            setOnClickListener { picker.launch(arrayOf("application/pdf")) }
+        }
+        val manage = Button(this).apply {
+            text = "مدیریت فایل‌ها"
+            textSize = 14f
+            isAllCaps = false
+            maxLines = 1
+            ellipsize = android.text.TextUtils.TruncateAt.END
+            minHeight = 0
+            minimumHeight = 0
+            setPadding(dp(6), 0, dp(6), 0)
+            setOnClickListener { showFileManager() }
+        }
+        buttons.addView(manage, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginStart = dp(4) })
+        buttons.addView(add, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginStart = dp(4) })
         root.addView(buttons)
 
-        filesLabel = TextView(this).apply { textSize = 13f; setTextColor(Color.LTGRAY); gravity = Gravity.RIGHT }
+        filesLabel = TextView(this).apply {
+            textSize = 13f
+            setTextColor(Color.LTGRAY)
+            gravity = Gravity.RIGHT
+        }
         root.addView(filesLabel, LinearLayout.LayoutParams(-1, -2))
 
-        status = TextView(this).apply { textSize = 12f; setTextColor(accent); gravity = Gravity.RIGHT; setPadding(0, 6, 0, 8) }
+        status = TextView(this).apply {
+            textSize = 12f
+            setTextColor(accent)
+            gravity = Gravity.RIGHT
+            setPadding(0, dp(6), 0, dp(8))
+        }
         root.addView(status, LinearLayout.LayoutParams(-1, -2))
 
-        results = RecyclerView(this).apply { layoutManager = LinearLayoutManager(this@MainActivity); setBackgroundColor(bg) }
+        results = RecyclerView(this).apply {
+            layoutManager = LinearLayoutManager(this@MainActivity)
+            setBackgroundColor(bg)
+        }
         resultAdapter = ResultAdapter()
         results.adapter = resultAdapter
         root.addView(results, LinearLayout.LayoutParams(-1, 0, 1f))
@@ -228,7 +276,7 @@ class MainActivity : AppCompatActivity() {
         private var data = listOf<PriceResult>()
         fun submit(v: List<PriceResult>) { data = v; notifyDataSetChanged() }
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ResultVH = ResultVH(LinearLayout(parent.context).apply {
-            orientation = LinearLayout.VERTICAL; setPadding(18, 16, 18, 16); setBackgroundColor(Color.rgb(29,34,43)); layoutDirection = View.LAYOUT_DIRECTION_RTL
+            orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(14), dp(16), dp(14)); setBackgroundColor(Color.rgb(29,34,43)); layoutDirection = View.LAYOUT_DIRECTION_RTL
         })
         override fun getItemCount() = data.size
         override fun onBindViewHolder(holder: ResultVH, position: Int) = holder.bind(data[position])
@@ -261,21 +309,10 @@ private object Parser {
             val description = line.take(600)
             val name = line.replace(priceRe, " ").replace(Regex("\\s+"), " ").trim().take(220)
             if (prices.isNotEmpty() || codes.isNotEmpty() || name.length >= 8) {
-                results += PriceResult(
-                    file = file,
-                    page = page,
-                    code = codes.firstOrNull() ?: "",
-                    name = name,
-                    description = description,
-                    price = prices.firstOrNull() ?: "",
-                    score = 1,
-                    context = description
-                )
+                results += PriceResult(file, page, codes.firstOrNull() ?: "", name, description, prices.firstOrNull() ?: "", 1, description)
             }
         }
-        if (results.isEmpty()) {
-            results += PriceResult(file, page, "", "", text.take(300), "", 1, text.take(700))
-        }
+        if (results.isEmpty()) results += PriceResult(file, page, "", "", text.take(300), "", 1, text.take(700))
         return results
     }
 }
@@ -308,6 +345,5 @@ private object Similarity {
 private fun normalize(s:String):String = s.lowercase(Locale.ROOT)
     .replace('ي','ی').replace('ى','ی').replace('ك','ک').replace('ة','ه')
     .replace(Regex("[َُِّْـ]"), "")
-    .map { when(it){ '۰'->'0';'۱'->'1';'۲'->'2';'۳'->'3';'۴'->'4';'۵'->'5';'۶'->'6';'۷'->'7';'۸'->'8';'۹'->'9';'٠'->'0';'١'->'1';'٢'->'2';'٣'->'3';'٤'->'4';'٥'->'5';'٦'->'6';'٧'->'7';'٨'->'8';'٩'->'9'; else->it } }.joinToString("")
-    .replace(Regex("[\\p{Punct}،؛:()\\[\\]{}]+"), " ")
+    .map { when(it){ '۰'->'0';'۱'->'1';'۲'->'2';'۳'->'3';'۴'->'4';'۵'->'5';'۶'->'6';'۷'->'7';'۸'->'8';'۹'->'9'; '٠'->'0';'١'->'1';'٢'->'2';'٣'->'3';'٤'->'4';'٥'->'5';'٦'->'6';'٧'->'7';'٨'->'8';'٩'->'9'; else->it } }.joinToString("")
     .replace(Regex("\\s+"), " ").trim()
