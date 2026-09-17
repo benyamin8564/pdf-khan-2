@@ -266,24 +266,26 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-private object PdfPageRenderer {
-    fun render(context: Context, uri: Uri, pageIndex: Int, maxWidth: Int): Bitmap? = try {
-        val file = ensureCached(context, uri)
-        val pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
-        val renderer = android.graphics.pdf.PdfRenderer(pfd)
-        try {
-            if (pageIndex !in 0 until renderer.pageCount) return null
-            val page = renderer.openPage(pageIndex)
+object PdfPageRenderer {
+    fun render(context: Context, uri: Uri, pageIndex: Int, maxWidth: Int): Bitmap? {
+        return try {
+            val file = ensureCached(context, uri)
+            val pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+            val renderer = android.graphics.pdf.PdfRenderer(pfd)
             try {
-                val width = maxWidth.coerceAtLeast(400)
-                val height = (width.toFloat() * page.height / page.width).roundToInt().coerceAtLeast(1)
-                return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also { bitmap ->
-                    bitmap.eraseColor(Color.WHITE)
-                    page.render(bitmap, null, null, android.graphics.pdf.PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                }
-            } finally { page.close() }
-        } finally { renderer.close(); pfd.close() }
-    } catch (_: Exception) { null }
+                if (pageIndex !in 0 until renderer.pageCount) return null
+                val page = renderer.openPage(pageIndex)
+                try {
+                    val width = maxWidth.coerceAtLeast(400)
+                    val height = (width.toFloat() * page.height / page.width).roundToInt().coerceAtLeast(1)
+                    return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).also { bitmap ->
+                        bitmap.eraseColor(Color.WHITE)
+                        page.render(bitmap, null, null, android.graphics.pdf.PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                    }
+                } finally { page.close() }
+            } finally { renderer.close(); pfd.close() }
+        } catch (_: Exception) { null }
+    }
 
     fun ensureCached(context: Context, uri: Uri): File {
         val key = sha256(uri.toString()).take(24)
