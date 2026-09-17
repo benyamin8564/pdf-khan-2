@@ -34,7 +34,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="v2.1-ui-fix-${{ github.run_number }}"
+          TAG="v2.2-pdf-preview-${{ github.run_number }}"
           gh release create "$TAG" app/build/outputs/apk/debug/app-debug.apk \
             --title "Smart PDF Price Finder AI $TAG" \
-            --notes "APK build with fixed responsive button sizing and phone UI layout."
+            --notes "APK with real PDF page previews in search results, separate PDF file manager, page viewer, navigation and zoom."
